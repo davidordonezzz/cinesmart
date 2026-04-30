@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartelera - CineSmart</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/cartelera}">
+            <i class="bi bi-film"></i> CineSmart
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/cartelera}">Cartelera</a>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" th:href="@{/mis-compras}">Mis Entradas</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link text-warning" th:href="@{/admin}">
+                        <i class="bi bi-gear"></i> Admin
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <span sec:authorize="isAuthenticated()" class="text-light me-3">
+                    <i class="bi bi-person-circle"></i>
+                    <span sec:authentication="name">usuario</span>
+                </span>
+                <a sec:authorize="!isAuthenticated()" class="btn btn-outline-light btn-sm me-2" th:href="@{/login}">Iniciar Sesión</a>
+                <a sec:authorize="!isAuthenticated()" class="btn btn-cinesmart btn-sm" th:href="@{/registro}">Registrarse</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light btn-sm">Cerrar Sesión</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main>
+  
+    <section class="hero-section text-center text-white">
+        <div class="container">
+            <h1 class="display-5 fw-bold"><i class="bi bi-film"></i> CineSmart</h1>
+            <p class="lead">Tu cine en El Puerto de Santa María</p>
+        </div>
+    </section>
+
+    <div class="container mt-4">
+        <!-- Filtros -->
+        <div class="filtros-section">
+            <!-- Este formulario manda los filtros a la ruta /cartelera.
+             Usa method get, así que los filtros aparecen en la URL -->
+            <form th:action="@{/cartelera}" method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Buscar por título</label>
+                    <!--name="titulo" conecta con el controlador con el requestParam
+                    y   th:value="${tituloFiltro}" es para que cuando le demos a filtrar  -->
+                    <input type="text" name="titulo" class="form-control bg-dark text-white border-secondary"
+                           th:value="${tituloFiltro}" placeholder="Escribe el título...">
+                </div>
+                <div class="col-md-3">
+                    <!-- Desplegable de genero -->
+                    <label class="form-label text-muted">Género</label>
+                    <select name="genero" class="form-select bg-dark text-white border-secondary">
+                        <option value="">Todos</option>
+                        <!--   th:selected="${g == generoFiltro}" para que se quede el generoSelecionado despues
+                           de filtrar -->
+                        <option th:each="g : ${generos}" th:value="${g}" th:text="${g}"
+                     
+                                th:selected="${g == generoFiltro}"></option>
+                                
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Edad</label>
+                    <select name="edad" class="form-select bg-dark text-white border-secondary">
+                        <option value="">Todas</option>
+                        <option th:each="e : ${edades}" th:value="${e}" th:text="${e}"
+                                th:selected="${e == edadFiltro}"></option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-cinesmart flex-grow-1">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a th:href="@{/cartelera}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Grid de películas -->
+         <!-- aqui nos muestra las peliculas en tarjeta -->
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+            <!-- recorremos las peliculas que mandamos desde el controlador -->
+            <div class="col" th:each="pelicula : ${peliculas}">
+                <!-- al pinchar la pelicula nos mandara al detalle de la pelicula -->
+                <a th:href="@{/pelicula/{id}(id=${pelicula.id})}" class="text-decoration-none">
+                    <div class="card pelicula-card">
+                        <img th:src="${pelicula.imagenUrl != null ? pelicula.imagenUrl : 'https://placehold.co/300x450/1a1a1a/666?text=Sin+Imagen'}"
+                             th:alt="${pelicula.titulo}" class="card-img-top">
+                        <div class="card-body">
+                            <h6 class="card-title mb-2" th:text="${pelicula.titulo}"></h6>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <span class="badge badge-genero" th:text="${pelicula.genero}"></span>
+                                <span class="badge badge-edad" th:if="${pelicula.edadRecomendada}"
+                                      th:text="'+' + ${pelicula.edadRecomendada}"></span>
+                                <span class="badge bg-secondary" th:if="${pelicula.duracion}"
+                                      th:text="${pelicula.duracion} + ' min'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Sin resultados -->
+        <div th:if="${#lists.isEmpty(peliculas)}" class="text-center py-5">
+            <i class="bi bi-camera-reels" style="font-size:3rem;color:#555"></i>
+            <p class="mt-3 text-muted">No se encontraron películas con esos filtros</p>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <div class="row">
+            <!-- Marca -->
+            <div class="col-md-4 mb-4 mb-md-0">
+                <div class="footer-brand"><i class="bi bi-film"></i> Cine<span>Smart</span></div>
+                <p class="footer-tagline">Tu cine en El Puerto de Santa María</p>
+                <div class="social-icons mt-3">
+                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="#" aria-label="Twitter/X"><i class="bi bi-twitter-x"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+                </div>
+            </div>
+            <!-- Navegación -->
+            <div class="col-md-2 col-6 mb-4 mb-md-0">
+                <p class="footer-heading">Cine</p>
+                <ul class="footer-links">
+                    <li><a th:href="@{/cartelera}">Cartelera</a></li>
+                    <li><a href="#">Próximos estrenos</a></li>
+                    <li><a href="#">Salas</a></li>
+                    <li><a href="#">Tarifas</a></li>
+                </ul>
+            </div>
+            <!-- Cliente -->
+            <div class="col-md-2 col-6 mb-4 mb-md-0">
+                <p class="footer-heading">Mi cuenta</p>
+                <ul class="footer-links">
+                    <li><a th:href="@{/mis-compras}">Mis entradas</a></li>
+                    <li><a th:href="@{/login}">Iniciar sesión</a></li>
+                    <li><a th:href="@{/registro}">Registrarse</a></li>
+                </ul>
+            </div>
+            <!-- Info -->
+            <div class="col-md-4 mb-4 mb-md-0">
+                <p class="footer-heading">Información</p>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="bi bi-geo-alt me-1"></i>C/ del Cine 1, El Puerto de Santa María</a></li>
+                    <li><a href="#"><i class="bi bi-telephone me-1"></i>956 000 000</a></li>
+                    <li><a href="#"><i class="bi bi-envelope me-1"></i>info@cinesmart.es</a></li>
+                    <li><a href="#">Aviso legal</a></li>
+                    <li><a href="#">Política de privacidad</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 CineSmart. Todos los derechos reservados.
+        </div>
+    </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
