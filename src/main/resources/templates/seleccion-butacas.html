@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegir Butaca - CineSmart</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/cartelera}">
+            <i class="bi bi-film"></i> CineSmart
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/cartelera}">Cartelera</a>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" th:href="@{/mis-compras}">Mis Entradas</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link text-warning" th:href="@{/admin}">
+                        <i class="bi bi-gear"></i> Admin
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <span sec:authorize="isAuthenticated()" class="text-light me-3">
+                    <i class="bi bi-person-circle"></i>
+                    <span sec:authentication="name">usuario</span>
+                </span>
+                <a sec:authorize="!isAuthenticated()" class="btn btn-outline-light btn-sm me-2" th:href="@{/login}">Iniciar Sesión</a>
+                <a sec:authorize="!isAuthenticated()" class="btn btn-cinesmart btn-sm" th:href="@{/registro}">Registrarse</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light btn-sm">Cerrar Sesión</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- Esta es la pantalla donde el usuario elige la butaca. 
+ Recibe desde el controlador la sesión, la sala, todos los asientos y los asientos ocupados. -->
+<main class="container mt-4">
+    <a th:href="@{/pelicula/{id}(id=${sesion.pelicula.id})}" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Volver a la película
+    </a>
+
+    <!-- Info de la sesión -->
+    <div class="text-center mb-4">
+        <!-- Mostramos el título de la película de esa sesión -->
+        <h3 th:text="${sesion.pelicula.titulo}"></h3>
+        <p class="text-muted">
+          <!-- Muestra el nombre de la sala -->
+            <i class="bi bi-building"></i> <span th:text="${sala.nombre}"></span> |
+            <!-- Muestra la fecha y hora de la sesión con formato fecha -->
+            <i class="bi bi-clock"></i> <span th:text="${#temporals.format(sesion.fechaHora, 'dd/MM/yyyy HH:mm')}"></span> |
+            <!-- Mostramos el precio con decimales -->
+            <i class="bi bi-tag"></i> <span th:text="${#numbers.formatDecimal(sesion.precio, 1, 2)}"></span> &euro;
+        </p>
+    </div>
+
+    <!-- Alerta de error -->
+    <div th:if="${error}" class="alert alert-danger text-center" th:text="${error}"></div>
+
+    <!-- Pantalla -->
+    <div class="pantalla">PANTALLA</div>
+
+    <!-- Mapa de butacas -->
+    <div class="mapa-butacas" id="mapaButacas">
+        <!-- Creamos las filas de las butacas -->
+         <!-- la fila primera es la que esta mas cerca de la pantalla -->
+        <div th:each="fila : ${#numbers.sequence(1, sala.filas)}" class="fila-butacas">
+            <!-- mostramos el numero de la fila a la izquierda -->
+            <span class="fila-label" th:text="${fila}"></span>
+            <!-- Primero creamos las filas de la sala. Despues, dentro de cada fila,
+     recorremos todos los asientos y solo mostramos los que pertenecen
+     a esa fila. si estamos pintando la fila 3,
+     solo se muestran los asientos cuya fila sea 3. -->
+            <th:block th:each="asiento : ${asientos}" th:if="${asiento.fila == fila}">
+               <!-- Dentro de cada fila pintamos sus butacas.
+     Cada butaca tiene siempre la clase "butaca".
+     Si el id del asiento esta en la lista de ocupados, se pinta como ocupada;
+     si no esta, se pinta como disponible.
+     Tambien guardamos en atributos data el id real del asiento, su fila y su columna.
+     Esos datos los usa js cuando el usuario pulsa una butaca:
+     muestra la fila y columna en el resumen y envia el asientoId al confirmar la compra. -->
+
+                <div th:class="'butaca ' + (${#lists.contains(ocupados, asiento.id)} ? 'ocupada' : 'disponible')"
+                
+                     th:data-asiento-id="${asiento.id}"
+                     th:data-fila="${asiento.fila}"
+                     th:data-columna="${asiento.columna}"
+                     th:data-ocupada="${#lists.contains(ocupados, asiento.id)}"
+                     th:text="${asiento.columna}"
+                     th:title="'Fila ' + ${asiento.fila} + ' - Asiento ' + ${asiento.columna}"></div>
+            </th:block>
+            <!-- Esto muestra el mismo número de fila a la derecha -->
+            <span class="fila-label" th:text="${fila}"></span>
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="leyenda mt-3">
+        <div class="leyenda-item">
+            <div class="leyenda-color" style="background:#28a745"></div> Disponible
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-color" style="background:#dc3545;opacity:0.5"></div> Ocupada
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-color" style="background:#ffc107"></div> Tu selección
+        </div>
+    </div>
+
+  
+  <!-- Cuando pulso confirmar compra, este formulario envía al backend dos datos: el id de la sesión y el id del asiento seleccionado -->
+
+    <div id="compraSection" class="text-center mt-4" style="display:none">
+        <div class="card bg-dark border-secondary mx-auto" style="max-width:400px">
+            <div class="card-body">
+                <h5>Resumen de compra</h5>
+                <p>Butaca: <strong>Fila <span id="filaSeleccionada"></span>, Asiento <span id="columnaSeleccionada"></span></strong></p>
+                <p>Precio: <strong th:text="${#numbers.formatDecimal(sesion.precio, 1, 2)}"></strong> &euro;</p>
+                <form th:action="@{/comprar}" method="post">
+                    <!-- Este campo oculto manda el id de la sesión -->
+                    <input type="hidden" name="sesionId" th:value="${sesion.id}">
+                    <!-- Este campo oculto manda el id del asiento seleccionado -->
+                    <input type="hidden" name="asientoId" id="asientoIdInput" value="">
+
+                  <button type="submit" class="btn btn-cinesmart btn-lg w-100" id="btnComprar">
+                        <i class="bi bi-credit-card"></i> Confirmar compra (simulada)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <div class="row">
+            <!-- Marca -->
+            <div class="col-md-4 mb-4 mb-md-0">
+                <div class="footer-brand"><i class="bi bi-film"></i> Cine<span>Smart</span></div>
+                <p class="footer-tagline">Tu cine en El Puerto de Santa María</p>
+                <div class="social-icons mt-3">
+                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="#" aria-label="Twitter/X"><i class="bi bi-twitter-x"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+                </div>
+            </div>
+            <!-- Navegación -->
+            <div class="col-md-2 col-6 mb-4 mb-md-0">
+                <p class="footer-heading">Cine</p>
+                <ul class="footer-links">
+                    <li><a th:href="@{/cartelera}">Cartelera</a></li>
+                    <li><a href="#">Próximos estrenos</a></li>
+                    <li><a href="#">Salas</a></li>
+                    <li><a href="#">Tarifas</a></li>
+                </ul>
+            </div>
+            <!-- Cliente -->
+            <div class="col-md-2 col-6 mb-4 mb-md-0">
+                <p class="footer-heading">Mi cuenta</p>
+                <ul class="footer-links">
+                    <li><a th:href="@{/mis-compras}">Mis entradas</a></li>
+                    <li><a th:href="@{/login}">Iniciar sesión</a></li>
+                    <li><a th:href="@{/registro}">Registrarse</a></li>
+                </ul>
+            </div>
+            <!-- Info -->
+            <div class="col-md-4 mb-4 mb-md-0">
+                <p class="footer-heading">Información</p>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="bi bi-geo-alt me-1"></i>C/ del Cine 1, El Puerto de Santa María</a></li>
+                    <li><a href="#"><i class="bi bi-telephone me-1"></i>956 000 000</a></li>
+                    <li><a href="#"><i class="bi bi-envelope me-1"></i>info@cinesmart.es</a></li>
+                    <li><a href="#">Aviso legal</a></li>
+                    <li><a href="#">Política de privacidad</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 CineSmart. Todos los derechos reservados.
+        </div>
+    </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let seleccionada = null;
+// Busca todas las butacas que tengan la clase butaca disponible
+        document.querySelectorAll('.butaca.disponible').forEach(function(butaca) {
+            // y luego al darle click 
+            butaca.addEventListener('click', function() {
+             // si ya hay una butaca seleccionada antes lo quitamos y lo volvemos a poner como disponible
+             // esto para evitar poder reservar dos butacas
+                if (seleccionada) {
+                    seleccionada.classList.remove('seleccionada');
+                    seleccionada.classList.add('disponible');
+                }
+
+             // Marcamos la butaca pulsada como seleccionada
+                this.classList.remove('disponible');
+                 // Quitamos la clase disponible y añadimos la clase seleccionada
+                this.classList.add('seleccionada');
+                seleccionada = this;
+
+            //   Guardamos el id real del asiento en el formulario oculto
+                document.getElementById('asientoIdInput').value = this.dataset.asientoId;
+                  // Tambien mostramos la fila y la columna en el resumen de compra
+                document.getElementById('filaSeleccionada').textContent = this.dataset.fila;
+                document.getElementById('columnaSeleccionada').textContent = this.dataset.columna;
+                 // Mostramos el resumen de compra que al principio estaba oculto.
+                document.getElementById('compraSection').style.display = 'block';
+            });
+        });
+    });
+</script>
+</body>
+</html>
