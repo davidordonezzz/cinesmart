@@ -1,0 +1,152 @@
+<!-- Muestra al administrador todas las sesiones creadas 
+ y permite crear, editar o eliminar sesiones
+ GET /admin/sesiones
+  -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesiones - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/cartelera}">
+            <i class="bi bi-film"></i> CineSmart
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/cartelera}">Cartelera</a>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" th:href="@{/mis-compras}">Mis Entradas</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link text-warning" th:href="@{/admin}">
+                        <i class="bi bi-gear"></i> Admin
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <span sec:authorize="isAuthenticated()" class="text-light me-3">
+                    <i class="bi bi-person-circle"></i>
+                    <span sec:authentication="name">usuario</span>
+                </span>
+                <a sec:authorize="!isAuthenticated()" class="btn btn-outline-light btn-sm me-2" th:href="@{/login}">Iniciar Sesión</a>
+                <a sec:authorize="!isAuthenticated()" class="btn btn-cinesmart btn-sm" th:href="@{/registro}">Registrarse</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light btn-sm">Cerrar Sesión</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+<main class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 admin-sidebar">
+            <h5 class="text-warning mb-3"><i class="bi bi-gear"></i> Admin</h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" th:href="@{/admin}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                <a class="nav-link" th:href="@{/admin/peliculas}"><i class="bi bi-film"></i> Películas</a>
+                <a class="nav-link" th:href="@{/admin/salas}"><i class="bi bi-building"></i> Salas</a>
+                <!-- Marcamos Sesiones como activo 
+                 porque estamos en la seccion de sesiones -->
+                <a class="nav-link active" th:href="@{/admin/sesiones}"><i class="bi bi-calendar"></i> Sesiones</a>
+            </nav>
+        </div>
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Sesiones</h2>
+                <!-- Boton que lleva al formulario para crear una sesion nueva -->
+                <a th:href="@{/admin/sesiones/nueva}" class="btn btn-cinesmart"><i class="bi bi-plus-lg"></i> Nueva sesión</a>
+            </div>
+            <div th:if="${exito}" class="alert alert-success" th:text="${exito}"></div>
+            <table class="table table-dark table-dark-custom table-hover">
+                <thead><tr><th>#</th><th>Película</th><th>Sala</th><th>Fecha y Hora</th><th>Precio</th><th>Acciones</th></tr></thead>
+                <tbody>
+                   <!-- Recorremos la lista sesiones 
+                    que viene del AdminSesionController -->
+                    <tr th:each="s : ${sesiones}">
+                        <td th:text="${s.id}"></td>
+                        <td th:text="${s.pelicula.titulo}"></td>
+                        <td th:text="${s.sala.nombre}"></td>
+                        <td th:text="${#temporals.format(s.fechaHora, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td th:text="${#numbers.formatDecimal(s.precio, 1, 2)} + ' €'"></td>
+                        <td>
+                            <!-- Boton editar, manda al formulario con el id de la sesion -->
+                            <a th:href="@{/admin/sesiones/editar/{id}(id=${s.id})}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i></a>
+                            <!-- Boton eliminar-->
+                            <a th:href="@{/admin/sesiones/eliminar/{id}(id=${s.id})}" class="btn btn-danger btn-sm"
+                               onclick="return confirm('¿Eliminar sesión?')"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer class="site-footer">
+    <div class="container">
+        <div class="row">
+            <!-- Marca -->
+            <div class="col-md-4 mb-4 mb-md-0">
+                <div class="footer-brand"><i class="bi bi-film"></i> Cine<span>Smart</span></div>
+                <p class="footer-tagline">Tu cine en El Puerto de Santa María</p>
+                <div class="social-icons mt-3">
+                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="#" aria-label="Twitter/X"><i class="bi bi-twitter-x"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+                </div>
+            </div>
+            <!-- Navegación -->
+            <div class="col-md-2 col-6 mb-4 mb-md-0">
+                <p class="footer-heading">Cine</p>
+                <ul class="footer-links">
+                    <li><a th:href="@{/cartelera}">Cartelera</a></li>
+                    <li><a href="#">Próximos estrenos</a></li>
+                    <li><a href="#">Salas</a></li>
+                    <li><a href="#">Tarifas</a></li>
+                </ul>
+            </div>
+            <!-- Cliente -->
+            <div class="col-md-2 col-6 mb-4 mb-md-0">
+                <p class="footer-heading">Mi cuenta</p>
+                <ul class="footer-links">
+                    <li><a th:href="@{/mis-compras}">Mis entradas</a></li>
+                    <li><a th:href="@{/login}">Iniciar sesión</a></li>
+                    <li><a th:href="@{/registro}">Registrarse</a></li>
+                </ul>
+            </div>
+            <!-- Info -->
+            <div class="col-md-4 mb-4 mb-md-0">
+                <p class="footer-heading">Información</p>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="bi bi-geo-alt me-1"></i>C/ del Cine 1, El Puerto de Santa María</a></li>
+                    <li><a href="#"><i class="bi bi-telephone me-1"></i>956 000 000</a></li>
+                    <li><a href="#"><i class="bi bi-envelope me-1"></i>info@cinesmart.es</a></li>
+                    <li><a href="#">Aviso legal</a></li>
+                    <li><a href="#">Política de privacidad</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 CineSmart. Todos los derechos reservados.
+        </div>
+    </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
