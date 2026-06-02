@@ -1,0 +1,67 @@
+@startuml secuencia-compra
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #B22222
+  ActorBorderColor #006400
+  LifeLineBorderColor #1E5A8E
+  ParticipantBorderColor #B22222
+  ParticipantBackgroundColor #FFFACD
+}
+
+title Diagrama de Secuencia · Flujo de Compra de Entrada
+
+actor Usuario as U
+participant "CompraController" as CC
+participant "Spring Security" as SS
+participant "CompraService" as CS
+participant "CompraRepository" as CR
+database "MySQL" as DB
+
+== Selección de butaca ==
+
+U -> CC : GET /sesion/{id}/butacas
+activate CC
+CC -> CR : findAsientoIdsBySesionId(id)
+CR -> DB : SELECT asiento_id FROM compras WHERE sesion_id=?
+DB --> CR : List<Long>
+CR --> CC : ocupados[]
+CC --> U : vista seleccion-butacas.html\n(grid con butacas libres/ocupadas)
+deactivate CC
+
+== Compra ==
+
+U -> CC : POST /comprar (sesionId, asientoId)
+activate CC
+CC -> SS : ¿usuario autenticado?
+SS --> CC : OK (UserDetails)
+
+CC -> CS : realizarCompra(email, sesionId, asientoId)
+activate CS
+CS -> CR : existsBySesionIdAndAsientoId(sesionId, asientoId)
+CR -> DB : SELECT count(*) ...
+DB --> CR : 0 (libre)
+CR --> CS : false
+
+CS -> CR : save(compra) [@Transactional]
+CR -> DB : INSERT INTO compras\n(UNIQUE garantiza no doble reserva)
+DB --> CR : Compra(id=42)
+CR --> CS : Compra
+CS --> CC : Compra
+deactivate CS
+
+CC --> U : redirect /compra/confirmacion/42\n(vista compra-confirmacion.html)
+deactivate CC
+
+== Mis Entradas ==
+
+U -> CC : GET /mis-compras
+activate CC
+CC -> CR : findByUsuarioIdOrderByFechaCompraDesc(usuarioId)
+CR -> DB : SELECT * FROM compras WHERE usuario_id=?
+DB --> CR : List<Compra>
+CR --> CC : compras[]
+CC --> U : vista mis-compras.html\n(historial de entradas)
+deactivate CC
+
+@enduml

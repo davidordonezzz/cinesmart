@@ -1,0 +1,48 @@
+@startuml casos-uso
+skinparam backgroundColor #FFFFFF
+left to right direction
+skinparam actorStyle awesome
+
+title Diagrama de Casos de Uso - CineSmart
+
+actor "Usuario\ninvitado" as invitado
+actor "Usuario\nregistrado" as user
+actor "Administrador" as admin
+
+invitado <|-- user
+user <|-- admin
+
+rectangle "Sistema CineSmart" {
+  usecase "Ver cartelera" as UC1
+  usecase "Filtrar por\ngenero/edad/titulo" as UC2
+  usecase "Ver detalle\nde pelicula" as UC3
+  usecase "Ver sesiones\ndisponibles" as UC4
+
+  usecase "Registrarse" as UC5
+  usecase "Iniciar sesion" as UC6
+
+  usecase "Seleccionar\nbutaca" as UC7
+  usecase "Realizar\ncompra" as UC8
+  usecase "Ver mis\ncompras" as UC9
+
+  usecase "CRUD\npeliculas" as UC10
+  usecase "CRUD\nsalas" as UC11
+  usecase "CRUD\nsesiones" as UC12
+}
+
+invitado --> UC1
+invitado --> UC2
+invitado --> UC3
+invitado --> UC4
+invitado --> UC5
+invitado --> UC6
+
+user --> UC7
+user --> UC8
+user --> UC9
+
+admin --> UC10
+admin --> UC11
+admin --> UC12
+
+@enduml

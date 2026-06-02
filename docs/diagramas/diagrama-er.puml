@@ -1,0 +1,78 @@
+@startuml diagrama-er
+skinparam backgroundColor #FFFFFF
+skinparam linetype ortho
+
+title Modelo Entidad-Relación · CineSmart
+
+entity "USUARIO" as usuario {
+  * id : BIGINT <<PK>>
+  --
+  * nombre : VARCHAR(50)
+  * email : VARCHAR(100) <<UNIQUE>>
+  * password : VARCHAR(255)
+  * rol : ENUM(USER, ADMIN)
+}
+
+entity "PELICULA" as pelicula {
+  * id : BIGINT <<PK>>
+  --
+  * titulo : VARCHAR(100)
+  * genero : VARCHAR(50)
+  * duracion : INT
+  * sinopsis : TEXT
+  * edadRecomendada : VARCHAR(10)
+  * imagenUrl : VARCHAR(255)
+}
+
+entity "SALA" as sala {
+  * id : BIGINT <<PK>>
+  --
+  * nombre : VARCHAR(50) <<UNIQUE>>
+  * filas : INT
+  * columnas : INT
+}
+
+entity "ASIENTO" as asiento {
+  * id : BIGINT <<PK>>
+  --
+  * sala_id : BIGINT <<FK>>
+  * fila : INT
+  * columna : INT
+}
+
+entity "SESION" as sesion {
+  * id : BIGINT <<PK>>
+  --
+  * pelicula_id : BIGINT <<FK>>
+  * sala_id : BIGINT <<FK>>
+  * fechaHora : DATETIME
+  * precio : DOUBLE
+}
+
+entity "COMPRA" as compra {
+  * id : BIGINT <<PK>>
+  --
+  * usuario_id : BIGINT <<FK>>
+  * sesion_id : BIGINT <<FK>>
+  * asiento_id : BIGINT <<FK>>
+  * fechaCompra : DATETIME
+  * precio : DOUBLE
+  --
+  <i>UNIQUE (sesion_id, asiento_id)</i>
+}
+
+usuario ||--o{ compra : "1:N"
+sesion  ||--o{ compra : "1:N"
+asiento ||--o{ compra : "1:N"
+pelicula ||--o{ sesion : "1:N"
+sala    ||--o{ sesion : "1:N"
+sala    ||--o{ asiento : "1:N"
+
+note bottom of compra
+  La restricción <b>UNIQUE (sesion_id, asiento_id)</b>
+  garantiza a nivel de base de datos que dos
+  usuarios <b>NO</b> puedan reservar la misma
+  butaca para la misma sesión.
+end note
+
+@enduml

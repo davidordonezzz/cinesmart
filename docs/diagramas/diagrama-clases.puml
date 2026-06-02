@@ -1,0 +1,81 @@
+@startuml diagrama-clases
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #FFFACD
+skinparam classBorderColor #B22222
+skinparam shadowing false
+hide circle
+
+title Diagrama de Clases UML · Modelo de Dominio · CineSmart
+
+class Usuario {
+  - id : Long
+  - nombre : String
+  - email : String <<unique>>
+  - password : String
+  - rol : Rol
+  - compras : List<Compra>
+}
+
+class Pelicula {
+  - id : Long
+  - titulo : String
+  - genero : String
+  - duracion : Integer
+  - sinopsis : String
+  - edadRecomendada : String
+  - imagenUrl : String
+}
+
+class Sala {
+  - id : Long
+  - nombre : String <<unique>>
+  - filas : Integer
+  - columnas : Integer
+}
+
+class Asiento {
+  - id : Long
+  - sala : Sala
+  - fila : Integer
+  - columna : Integer
+}
+
+class Sesion {
+  - id : Long
+  - pelicula : Pelicula
+  - sala : Sala
+  - fechaHora : LocalDateTime
+  - precio : Double
+}
+
+class Compra {
+  - id : Long
+  - usuario : Usuario
+  - sesion : Sesion
+  - asiento : Asiento
+  - fechaCompra : LocalDateTime
+  - precio : Double
+}
+
+enum Rol {
+  USER
+  ADMIN
+}
+
+' Relaciones
+Usuario "1" --> "*" Compra : realiza
+Sesion  "1" --> "*" Compra : tiene
+Asiento "1" --> "*" Compra : reservado en
+Pelicula "1" --> "*" Sesion : se proyecta en
+Sala "1" --> "*" Sesion : aloja
+Sala "1" --> "*" Asiento : contiene
+Usuario --> Rol
+
+note right of Compra
+  <b>UNIQUE (sesion_id, asiento_id)</b>
+  Garantía a nivel de BD contra
+  doble reserva de butaca
+  en la misma sesión.
+end note
+
+@enduml

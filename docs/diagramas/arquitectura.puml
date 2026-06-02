@@ -1,0 +1,69 @@
+@startuml arquitectura
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #FFFACD
+  BorderColor #B22222
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #87CEEB
+  BorderColor #1E5A8E
+}
+skinparam actor {
+  BackgroundColor #98FB98
+  BorderColor #006400
+}
+
+title Arquitectura por Capas · CineSmart (MVC + Spring Boot)
+
+actor "Usuario\n(navegador)" as user
+
+rectangle "CAPA DE PRESENTACIÓN\n(Thymeleaf + Bootstrap 5)" as view #FFE4B5 {
+  rectangle "Vistas HTML" as html
+}
+
+rectangle "CAPA DE CONTROL\n(@Controller / Spring MVC)" as ctrl #FFD700 {
+  rectangle "CarteleraController" as c1
+  rectangle "CompraController" as c2
+  rectangle "AuthController" as c3
+  rectangle "AdminController(s)" as c4
+}
+
+rectangle "CAPA DE SEGURIDAD\n(Spring Security)" as sec #FF6347 {
+  rectangle "SecurityFilterChain\n(BCrypt, Roles)" as s1
+}
+
+rectangle "CAPA DE SERVICIO\n(@Service / Lógica de negocio)" as svc #98FB98 {
+  rectangle "CompraService\n(Transactional)" as sv1
+  rectangle "UsuarioService\n(UserDetailsService)" as sv2
+  rectangle "PeliculaService" as sv3
+  rectangle "SesionService" as sv4
+  rectangle "SalaService" as sv5
+}
+
+rectangle "CAPA DE PERSISTENCIA\n(@Repository / Spring Data JPA)" as rep #87CEEB {
+  rectangle "JpaRepository<T>\n+ JPQL personalizado" as r1
+}
+
+database "MySQL 8\nbase de datos\nrelacional" as db
+
+user --> view : HTTP
+view --> ctrl : Form / GET
+ctrl --> sec : autorización
+ctrl --> svc : llamada
+svc --> rep : consulta
+rep --> db : SQL / JDBC
+
+note right of svc
+  La lógica de negocio
+  vive aquí. Los
+  controllers son finos.
+end note
+
+note right of rep
+  UNIQUE (sesion_id, asiento_id)
+  garantiza no doble reserva.
+end note
+
+@enduml
